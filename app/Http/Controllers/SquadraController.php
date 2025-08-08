@@ -10,9 +10,7 @@ class SquadraController extends Controller
     private $squadre = [
         'Beghe',
         'Fusellami',
-        'Bunga bunga',
         'Degrado sul divano',
-        'Real vergogna',
         'Maiafic',
         'Dinamo',
         'Tim Fucchio',
