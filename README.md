@@ -23,7 +23,7 @@ senza ripetizioni fino al completamento del ciclo.
 - Laravel 10
 - Blade
 - JavaScript vanilla con Vite
-- Sessione Laravel (driver file di default)
+- SQLite per persistenza stato/configurazioni
 
 ## Requisiti
 
@@ -84,8 +84,27 @@ php artisan serve
 http://127.0.0.1:8000
 ```
 
-Nota: per lo stato attuale dell'app non e necessario configurare il database,
-perche la logica usa sessione e array in memoria.
+Nota: lo stato operativo e persistito su SQLite. La sessione mantiene solo il token
+del browser corrente, mentre dati di squadre/estrazioni sono su database.
+
+Per la persistenza su SQLite:
+
+```bash
+touch database/database.sqlite
+```
+
+In `.env`:
+
+```text
+DB_CONNECTION=sqlite
+DB_DATABASE=/percorso/assoluto/al/progetto/database/database.sqlite
+```
+
+Poi esegui le migration:
+
+```bash
+php artisan migrate
+```
 
 Flusso consigliato:
 
@@ -105,8 +124,10 @@ Flusso consigliato:
 ## Struttura rilevante
 
 - `app/Http/Controllers/SquadraController.php`: logica di estrazione e reset
+- `app/Models/ExtractionConfig.php`: modello stato/configurazione persistita
 - `app/Services/SquadraExtractorService.php`: logica di business per estrazione/reset
 - `config/squadre.php`: elenco squadre configurabile
+- `database/migrations/2026_03_11_000002_create_extraction_configs_table.php`: tabella persistenza estrazioni
 - `resources/views/squadre.blade.php`: layout UI e stile pagina
 - `resources/js/squadre.js`: logica frontend (fetch AJAX + aggiornamento DOM)
 - `routes/web.php`: definizione rotte web
@@ -129,14 +150,16 @@ sudo apt install php-mbstring
 
 ## Limiti attuali
 
-- Stato salvato solo in sessione (non condiviso tra utenti/dispositivi).
 - CSS ancora inline nella view (JS separato su asset Vite).
 - Mancano test unitari sul service e test end-to-end browser.
 - Nessuna persistenza storica delle configurazioni squadre.
 
+Aggiornamento: lo stato operativo corrente e ora persistito su SQLite tramite tabella
+`extraction_configs` (setup, squadre restanti, ultima estrazione, cicli).
+
 ## Miglioramenti consigliati
 
-1. Spostare stato e configurazioni su SQLite per persistenza reale (multi-utente o ripresa sessioni).
+1. Aggiungere storico configurazioni/estrazioni (non solo stato corrente).
 2. Aggiungere test unitari dedicati a `SquadraExtractorService`.
 3. Portare anche il CSS in asset Vite, rimuovendo gli stili inline dalla view.
 4. Introdurre persistenza preferenze UI (es. tema) in localStorage.

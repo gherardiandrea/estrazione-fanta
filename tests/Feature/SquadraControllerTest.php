@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SquadraControllerTest extends TestCase
 {
+    use RefreshDatabase;
+
     private function setupDefaultSquadre(): void
     {
         $this->post('/setup', ['mode' => 'default'])->assertRedirect('/');

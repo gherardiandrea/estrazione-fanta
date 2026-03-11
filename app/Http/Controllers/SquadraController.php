@@ -2,19 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ExtractionConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use App\Services\SquadraExtractorService;
+use Illuminate\Support\Str;
 
 class SquadraController extends Controller
 {
-    private const SESSION_KEYS = [
-        'activeSquadre',
-        'ultimaSquadraEstratta',
-        'squadreRestanti',
-        'numeroEstrazione',
-        'cicliCompletati',
-    ];
+    private const CONFIG_TOKEN_KEY = 'extractionConfigToken';
 
     public function __construct(private readonly SquadraExtractorService $extractor)
     {
@@ -23,8 +19,8 @@ class SquadraController extends Controller
     public function index()
     {
         $defaultSquadre = config('squadre.list', []);
-        $activeSquadre = Session::get('activeSquadre', []);
-        $needsSetup = empty($activeSquadre);
+        $config = $this->resolveConfig();
+        $needsSetup = !$config;
 
         if ($needsSetup) {
             return view('squadre', [
@@ -37,18 +33,11 @@ class SquadraController extends Controller
             ]);
         }
 
-        $initialState = $this->extractor->initialState($activeSquadre);
-
-        $ultimaSquadraEstratta = Session::get('ultimaSquadraEstratta', $initialState['ultimaSquadraEstratta']);
-        $squadreRestanti = Session::get('squadreRestanti', $initialState['squadreRestanti']);
-        $numeroEstrazione = Session::get('numeroEstrazione', $initialState['numeroEstrazione']);
-        $cicliCompletati = Session::get('cicliCompletati', $initialState['cicliCompletati']);
-
         return view('squadre', [
-            'squadra' => $ultimaSquadraEstratta,
-            'numeroEstrazione' => $numeroEstrazione,
-            'cicliCompletati' => $cicliCompletati,
-            'squadreRestanti' => $squadreRestanti,
+            'squadra' => $config->last_team ?? 'Nessuna squadra estratta',
+            'numeroEstrazione' => $config->draw_number,
+            'cicliCompletati' => $config->completed_cycles,
+            'squadreRestanti' => $config->remaining_teams,
             'needsSetup' => false,
             'defaultSquadre' => $defaultSquadre,
         ]);
@@ -71,39 +60,48 @@ class SquadraController extends Controller
                 ->withInput();
         }
 
+        $token = Session::get(self::CONFIG_TOKEN_KEY, (string) Str::uuid());
         $resetState = $this->extractor->resetState($squadre);
+        $config = ExtractionConfig::firstOrNew(['token' => $token]);
 
-        Session::put('activeSquadre', $squadre);
-        Session::put('ultimaSquadraEstratta', $resetState['ultimaSquadraEstratta']);
-        Session::put('squadreRestanti', $resetState['squadreRestanti']);
-        Session::put('numeroEstrazione', $resetState['numeroEstrazione']);
-        Session::put('cicliCompletati', $resetState['cicliCompletati']);
+        $config->fill([
+            'teams' => $squadre,
+            'remaining_teams' => $resetState['squadreRestanti'],
+            'last_team' => null,
+            'draw_number' => $resetState['numeroEstrazione'],
+            'completed_cycles' => $resetState['cicliCompletati'],
+        ]);
+
+        $config->save();
+
+        Session::put(self::CONFIG_TOKEN_KEY, $token);
 
         return redirect('/');
     }
 
     public function estrai()
     {
-        $activeSquadre = Session::get('activeSquadre', []);
+        $config = $this->resolveConfig();
 
-        if (empty($activeSquadre)) {
+        if (!$config) {
             return response()->json([
                 'message' => 'Configura prima l\'elenco squadre.',
             ], 422);
         }
 
-        $initialState = $this->extractor->initialState($activeSquadre);
+        $result = $this->extractor->extract(
+            $config->remaining_teams,
+            $config->draw_number,
+            $config->completed_cycles,
+            $config->teams
+        );
 
-        $squadreRestanti = Session::get('squadreRestanti', $initialState['squadreRestanti']);
-        $numeroEstrazione = Session::get('numeroEstrazione', $initialState['numeroEstrazione']);
-        $cicliCompletati = Session::get('cicliCompletati', $initialState['cicliCompletati']);
-
-        $result = $this->extractor->extract($squadreRestanti, $numeroEstrazione, $cicliCompletati, $activeSquadre);
-
-        Session::put('ultimaSquadraEstratta', $result['squadra']);
-        Session::put('numeroEstrazione', $result['numeroEstrazione']);
-        Session::put('cicliCompletati', $result['cicliCompletati']);
-        Session::put('squadreRestanti', $result['squadreRestanti']);
+        $config->update([
+            'last_team' => $result['squadra'],
+            'draw_number' => $result['numeroEstrazione'],
+            'completed_cycles' => $result['cicliCompletati'],
+            'remaining_teams' => $result['squadreRestanti'],
+        ]);
 
         return response()->json([
             'squadra' => $result['squadra'],
@@ -115,20 +113,22 @@ class SquadraController extends Controller
 
     public function reset()
     {
-        $activeSquadre = Session::get('activeSquadre', []);
+        $config = $this->resolveConfig();
 
-        if (empty($activeSquadre)) {
+        if (!$config) {
             return response()->json([
                 'message' => 'Configura prima l\'elenco squadre.',
             ], 422);
         }
 
-        $resetState = $this->extractor->resetState($activeSquadre);
+        $resetState = $this->extractor->resetState($config->teams);
 
-        Session::put('ultimaSquadraEstratta', $resetState['ultimaSquadraEstratta']);
-        Session::put('squadreRestanti', $resetState['squadreRestanti']);
-        Session::put('numeroEstrazione', $resetState['numeroEstrazione']);
-        Session::put('cicliCompletati', $resetState['cicliCompletati']);
+        $config->update([
+            'last_team' => null,
+            'remaining_teams' => $resetState['squadreRestanti'],
+            'draw_number' => $resetState['numeroEstrazione'],
+            'completed_cycles' => $resetState['cicliCompletati'],
+        ]);
 
         return response()->json([
             'squadreRestanti' => $resetState['squadreRestanti'],
@@ -137,9 +137,25 @@ class SquadraController extends Controller
 
     public function nuovaConfigurazione()
     {
-        Session::forget(self::SESSION_KEYS);
+        $config = $this->resolveConfig();
+        if ($config) {
+            $config->delete();
+        }
+
+        Session::forget(self::CONFIG_TOKEN_KEY);
 
         return redirect('/');
+    }
+
+    private function resolveConfig(): ?ExtractionConfig
+    {
+        $token = Session::get(self::CONFIG_TOKEN_KEY);
+
+        if (!$token) {
+            return null;
+        }
+
+        return ExtractionConfig::where('token', $token)->first();
     }
 
     private function parseCustomTeams(string $rawInput): array
