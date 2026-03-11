@@ -64,6 +64,12 @@ cp .env.example .env
 php artisan key:generate
 ```
 
+Imposta le tue squadre predefinite in locale (non pubblicate su Git):
+
+```text
+DEFAULT_TEAMS="Squadra 1|Squadra 2|Squadra 3|Squadra 4"
+```
+
 4. Configura SQLite e migra
 
 ```bash
@@ -118,6 +124,12 @@ sudo apt install php-mbstring
 - Sessione: mantiene solo il token di collegamento al record DB
 - Stato persistito: teams, remaining_teams, last_team, draw_number, completed_cycles
 
+## Privacy squadre predefinite
+
+- Le squadre predefinite non devono stare hardcoded nel repository.
+- Il progetto legge i default da `.env` tramite `DEFAULT_TEAMS` (separate da `|`).
+- `.env` e gia ignorato da Git, quindi i tuoi nomi restano privati.
+
 ## API/Rotte principali
 
 - `GET /`
@@ -132,6 +144,7 @@ Il progetto include:
 
 - Licenza MIT (`LICENSE`)
 - CI GitHub Actions (`.github/workflows/ci.yml`)
+- CI eseguibile su push/PR e manualmente da GitHub Actions (Run workflow)
 - Template issue (`.github/ISSUE_TEMPLATE/`)
 - Guide community:
 	- `CONTRIBUTING.md`
