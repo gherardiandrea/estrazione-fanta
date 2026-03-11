@@ -28,18 +28,22 @@ jobs:
           node-version: "20"
           cache: npm
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Install Node dependencies
-        run: npm ci
-
       - name: Prepare environment
         run: |
           cp .env.example .env
-          php artisan key:generate
           mkdir -p database
           touch database/database.sqlite
+
+      - name: Install PHP dependencies (no scripts)
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Generate key and discover packages
+        run: |
+          php artisan key:generate --force
+          php artisan package:discover --ansi
+
+      - name: Install Node dependencies
+        run: npm ci
 
       - name: Run migrations
         env:
