@@ -19,5 +19,7 @@ Route::get('/welcome', function () {
 });
 
 Route::get('/', [SquadraController::class, 'index']);
+Route::post('/setup', [SquadraController::class, 'setup'])->name('setup');
 Route::post('/estrai', [SquadraController::class, 'estrai'])->name('estrai');
 Route::post('/reset', [SquadraController::class, 'reset'])->name('reset');
+Route::post('/nuova-configurazione', [SquadraController::class, 'nuovaConfigurazione'])->name('nuova-configurazione');

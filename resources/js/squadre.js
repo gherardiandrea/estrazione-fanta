@@ -56,7 +56,18 @@ async function postJson(url) {
     });
 
     if (!response.ok) {
-        throw new Error('Request failed');
+        let message = 'Richiesta non riuscita.';
+
+        try {
+            const payload = await response.json();
+            if (payload.message) {
+                message = payload.message;
+            }
+        } catch (error) {
+            // Keep default message when response is not JSON.
+        }
+
+        throw new Error(message);
     }
 
     return response.json();
@@ -97,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderSquadreRestanti(data.squadreRestanti || []);
             setFeedback('Estrazione completata con successo.', 'success');
         } catch (error) {
-            setFeedback("Errore durante l'estrazione. Riprova.", 'error');
+            setFeedback(error.message || "Errore durante l'estrazione. Riprova.", 'error');
         } finally {
             setButtonsDisabled(false);
         }
@@ -117,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderSquadreRestanti(data.squadreRestanti || []);
             setFeedback('Reset completato.', 'success');
         } catch (error) {
-            setFeedback('Errore durante il reset. Riprova.', 'error');
+            setFeedback(error.message || 'Errore durante il reset. Riprova.', 'error');
         } finally {
             setButtonsDisabled(false);
         }

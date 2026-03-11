@@ -5,6 +5,7 @@ senza ripetizioni fino al completamento del ciclo.
 
 ## Funzionalita
 
+- Configurazione iniziale: scelta tra squadre predefinite o lista personalizzata.
 - Estrazione casuale di una squadra alla volta.
 - Nessuna ripetizione finche non finiscono le squadre disponibili.
 - Conteggio del numero di estrazioni nel ciclo corrente.
@@ -14,6 +15,7 @@ senza ripetizioni fino al completamento del ciclo.
 - Feedback utente in tempo reale (stato, successo, errore).
 - Pulsanti protetti da click multipli durante le richieste.
 - Stato esplicito quando la lista squadre e vuota.
+- Possibilita di avviare una nuova configurazione in qualsiasi momento.
 
 ## Stack tecnico
 
@@ -85,11 +87,20 @@ http://127.0.0.1:8000
 Nota: per lo stato attuale dell'app non e necessario configurare il database,
 perche la logica usa sessione e array in memoria.
 
+Flusso consigliato:
+
+1. Apri `/`.
+2. Scegli modalita `predefinita` o `personalizzata`.
+3. Avvia l'estrazione.
+4. Se vuoi cambiare elenco, usa il pulsante `Nuova configurazione`.
+
 ## Rotte principali
 
 - `GET /` -> pagina principale con stato corrente
+- `POST /setup` -> inizializza le squadre (default/custom)
 - `POST /estrai` -> estrae una squadra e restituisce JSON
 - `POST /reset` -> resetta lo stato e restituisce JSON
+- `POST /nuova-configurazione` -> cancella la configurazione corrente e torna alla schermata iniziale
 
 ## Struttura rilevante
 
@@ -121,10 +132,11 @@ sudo apt install php-mbstring
 - Stato salvato solo in sessione (non condiviso tra utenti/dispositivi).
 - CSS ancora inline nella view (JS separato su asset Vite).
 - Mancano test unitari sul service e test end-to-end browser.
+- Nessuna persistenza storica delle configurazioni squadre.
 
 ## Miglioramenti consigliati
 
-1. Spostare lo stato da sessione a persistenza su database se serve condivisione multiutente.
+1. Spostare stato e configurazioni su SQLite per persistenza reale (multi-utente o ripresa sessioni).
 2. Aggiungere test unitari dedicati a `SquadraExtractorService`.
 3. Portare anche il CSS in asset Vite, rimuovendo gli stili inline dalla view.
 4. Introdurre persistenza preferenze UI (es. tema) in localStorage.

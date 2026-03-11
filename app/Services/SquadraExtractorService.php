@@ -4,25 +4,20 @@ namespace App\Services;
 
 class SquadraExtractorService
 {
-    private function squadre(): array
-    {
-        return config('squadre.list', []);
-    }
-
-    public function initialState(): array
+    public function initialState(array $squadre): array
     {
         return [
             'ultimaSquadraEstratta' => 'Nessuna squadra estratta',
             'numeroEstrazione' => 0,
             'cicliCompletati' => 0,
-            'squadreRestanti' => $this->squadre(),
+            'squadreRestanti' => $squadre,
         ];
     }
 
-    public function extract(array $squadreRestanti, int $numeroEstrazione, int $cicliCompletati): array
+    public function extract(array $squadreRestanti, int $numeroEstrazione, int $cicliCompletati, array $squadreBase): array
     {
         if (empty($squadreRestanti)) {
-            $squadreRestanti = $this->squadre();
+            $squadreRestanti = $squadreBase;
             $cicliCompletati++;
             $numeroEstrazione = 0;
         }
@@ -42,13 +37,13 @@ class SquadraExtractorService
         ];
     }
 
-    public function resetState(): array
+    public function resetState(array $squadre): array
     {
         return [
             'ultimaSquadraEstratta' => 'Nessuna squadra estratta',
             'numeroEstrazione' => 0,
             'cicliCompletati' => 0,
-            'squadreRestanti' => $this->squadre(),
+            'squadreRestanti' => $squadre,
         ];
     }
 }

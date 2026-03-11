@@ -118,6 +118,86 @@
             white-space: nowrap;
         }
 
+        .setup-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 18px;
+            border: 1px solid rgba(16, 33, 58, 0.15);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+            animation: floatIn 620ms ease-out 80ms both;
+        }
+
+        .setup-text {
+            margin: 0 0 14px;
+            color: #3a536f;
+            line-height: 1.45;
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .mode-option {
+            border: 1px solid rgba(16, 33, 58, 0.18);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .mode-option input {
+            margin-right: 6px;
+        }
+
+        .mode-option small {
+            display: block;
+            color: #5f7186;
+            margin-top: 6px;
+        }
+
+        .setup-label {
+            display: block;
+            font-size: 0.9rem;
+            color: #294764;
+            margin: 4px 0 6px;
+            font-weight: 700;
+        }
+
+        .setup-input {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(16, 33, 58, 0.2);
+            padding: 10px 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.92rem;
+            min-height: 130px;
+            resize: vertical;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .hint {
+            margin: 6px 0 0;
+            color: #607388;
+            font-size: 0.84rem;
+        }
+
+        .errors {
+            margin: 10px 0 0;
+            padding-left: 18px;
+            color: #b5182a;
+        }
+
+        .reconfigure-form {
+            margin: 0;
+        }
+
+        .button-secondary {
+            background: linear-gradient(90deg, #405a75, #516f8e);
+            color: #fff;
+        }
+
         .draw-card {
             background: var(--card);
             border-radius: 20px;
@@ -294,6 +374,10 @@
             button {
                 flex: 1;
             }
+
+            .mode-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @keyframes riseIn {
@@ -338,33 +422,79 @@
         <section class="content">
             <header class="hero">
                 <h1 class="title">Estrazione Fanta</h1>
-                <span class="badge">Stagione attiva</span>
+                <span class="badge">Randomizer squadre</span>
             </header>
 
-            <section class="draw-card">
-                <p id="numero-estrazione">{{ $numeroEstrazione > 0 ? $numeroEstrazione . '° squadra estratta' : '' }}</p>
-                <strong id="squadra-estratta">{{ $squadra }}</strong>
-                <div class="meta-line">
-                    <p id="cicli-completati">Cicli completati: {{ $cicliCompletati }}</p>
-                    <span class="help-pill" title="Un ciclo e completo quando vengono estratte tutte le squadre una volta.">?</span>
+            @if($needsSetup)
+                <section class="setup-card">
+                    <p class="setup-text">
+                        Scegli se partire dalle squadre predefinite oppure inserire una lista personalizzata.
+                        Dopo la configurazione puoi iniziare subito le estrazioni.
+                    </p>
+
+                    <form method="POST" action="{{ route('setup') }}">
+                        @csrf
+                        <div class="mode-grid">
+                            <label class="mode-option">
+                                <input type="radio" name="mode" value="default" {{ old('mode', 'default') === 'default' ? 'checked' : '' }}>
+                                Usa squadre predefinite
+                                <small>{{ count($defaultSquadre) }} squadre pronte all'uso.</small>
+                            </label>
+
+                            <label class="mode-option">
+                                <input type="radio" name="mode" value="custom" {{ old('mode') === 'custom' ? 'checked' : '' }}>
+                                Inserisci squadre personalizzate
+                                <small>Separate da a capo, virgola o punto e virgola.</small>
+                            </label>
+                        </div>
+
+                        <label class="setup-label" for="custom_teams">Lista personalizzata (almeno 2 squadre)</label>
+                        <textarea class="setup-input" id="custom_teams" name="custom_teams" placeholder="Es: Team A&#10;Team B&#10;Team C">{{ old('custom_teams') }}</textarea>
+                        <p class="hint">Se scegli "predefinite", questo campo viene ignorato.</p>
+
+                        @if($errors->any())
+                            <ul class="errors">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="actions" style="margin-top: 14px;">
+                            <button class="primary-button" type="submit">Avvia estrazione</button>
+                        </div>
+                    </form>
+                </section>
+            @else
+                <section class="draw-card">
+                    <p id="numero-estrazione">{{ $numeroEstrazione > 0 ? $numeroEstrazione . '° squadra estratta' : '' }}</p>
+                    <strong id="squadra-estratta">{{ $squadra }}</strong>
+                    <div class="meta-line">
+                        <p id="cicli-completati">Cicli completati: {{ $cicliCompletati }}</p>
+                        <span class="help-pill" title="Un ciclo e completo quando vengono estratte tutte le squadre una volta.">?</span>
+                    </div>
+                </section>
+
+                <div class="actions">
+                    <button class="primary-button" id="estrai-squadra">Estrai squadra</button>
+                    <button class="reset-button" id="reset-squadre">Resetta ciclo</button>
+                    <form class="reconfigure-form" method="POST" action="{{ route('nuova-configurazione') }}">
+                        @csrf
+                        <button class="button-secondary" type="submit">Nuova configurazione</button>
+                    </form>
                 </div>
-            </section>
 
-            <div class="actions">
-                <button class="primary-button" id="estrai-squadra">Estrai squadra</button>
-                <button class="reset-button" id="reset-squadre">Resetta ciclo</button>
-            </div>
+                <p id="feedback" class="info"></p>
 
-            <p id="feedback" class="info"></p>
-
-            <h2 class="list-title">Squadre restanti</h2>
-            <ul id="squadre-restanti">
-                @forelse($squadreRestanti as $s)
-                    <li>{{ $s }}</li>
-                @empty
-                    <li class="empty-state">Nessuna squadra rimanente: al prossimo click parte un nuovo ciclo.</li>
-                @endforelse
-            </ul>
+                <h2 class="list-title">Squadre restanti</h2>
+                <ul id="squadre-restanti">
+                    @forelse($squadreRestanti as $s)
+                        <li>{{ $s }}</li>
+                    @empty
+                        <li class="empty-state">Nessuna squadra rimanente: al prossimo click parte un nuovo ciclo.</li>
+                    @endforelse
+                </ul>
+            @endif
         </section>
     </main>
 

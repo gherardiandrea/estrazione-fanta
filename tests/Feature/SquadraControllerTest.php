@@ -6,6 +6,11 @@ use Tests\TestCase;
 
 class SquadraControllerTest extends TestCase
 {
+    private function setupDefaultSquadre(): void
+    {
+        $this->post('/setup', ['mode' => 'default'])->assertRedirect('/');
+    }
+
     public function test_homepage_returns_ok(): void
     {
         $response = $this->get('/');
@@ -13,8 +18,40 @@ class SquadraControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_setup_default_initializes_session(): void
+    {
+        $this->post('/setup', ['mode' => 'default'])->assertRedirect('/');
+
+        $this->assertEquals(config('squadre.list'), session('activeSquadre'));
+        $this->assertEquals(0, session('numeroEstrazione'));
+        $this->assertEquals(0, session('cicliCompletati'));
+    }
+
+    public function test_setup_custom_initializes_session(): void
+    {
+        $custom = "Ajax\nMilan\nInter";
+
+        $this->post('/setup', [
+            'mode' => 'custom',
+            'custom_teams' => $custom,
+        ])->assertRedirect('/');
+
+        $this->assertEquals(['Ajax', 'Milan', 'Inter'], session('activeSquadre'));
+    }
+
+    public function test_estrai_requires_setup(): void
+    {
+        $this->post('/estrai')
+            ->assertStatus(422)
+            ->assertJson([
+                'message' => "Configura prima l'elenco squadre.",
+            ]);
+    }
+
     public function test_estrai_returns_expected_payload(): void
     {
+        $this->setupDefaultSquadre();
+
         $response = $this->post('/estrai');
 
         $response
@@ -35,6 +72,8 @@ class SquadraControllerTest extends TestCase
 
     public function test_no_duplicate_extractions_in_single_cycle(): void
     {
+        $this->setupDefaultSquadre();
+
         $initialList = config('squadre.list');
         $extracted = [];
 
@@ -53,6 +92,8 @@ class SquadraControllerTest extends TestCase
 
     public function test_reset_restores_initial_state(): void
     {
+        $this->setupDefaultSquadre();
+
         $this->post('/estrai')->assertOk();
 
         $response = $this->post('/reset');
