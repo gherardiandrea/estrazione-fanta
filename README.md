@@ -92,7 +92,7 @@ php artisan serve
 http://127.0.0.1:8000
 ```
 
-Nota: lo stato operativo e persistito su SQLite. La sessione mantiene solo il token
+Nota: lo stato operativo è persistito su SQLite. La sessione mantiene solo il token
 del browser corrente, mentre dati di squadre/estrazioni sono su database.
 
 Per la persistenza su SQLite:
