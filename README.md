@@ -66,19 +66,27 @@ php artisan key:generate
 npm install
 ```
 
-5. Avvia Vite (in un terminale separato):
+5. Avvio comodo (Laravel + Vite insieme):
+
+```bash
+npm run dev:all
+```
+
+In alternativa, avvio separato.
+
+6. Avvia Vite (in un terminale separato):
 
 ```bash
 npm run dev
 ```
 
-6. Avvia il server Laravel:
+7. Avvia il server Laravel:
 
 ```bash
 php artisan serve
 ```
 
-7. Apri nel browser:
+8. Apri nel browser:
 
 ```text
 http://127.0.0.1:8000
