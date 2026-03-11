@@ -10,15 +10,31 @@ senza ripetizioni fino al completamento del ciclo.
 - Conteggio del numero di estrazioni nel ciclo corrente.
 - Conteggio dei cicli completati.
 - Reset dello stato di estrazione.
-- Interfaccia web con aggiornamento AJAX.
+- Interfaccia web moderna e responsive.
+- Feedback utente in tempo reale (stato, successo, errore).
+- Pulsanti protetti da click multipli durante le richieste.
+- Stato esplicito quando la lista squadre e vuota.
 
 ## Stack tecnico
 
 - PHP 8.1+
 - Laravel 10
 - Blade
-- jQuery (via CDN)
+- JavaScript vanilla con Vite
 - Sessione Laravel (driver file di default)
+
+## Requisiti
+
+- PHP 8.1+
+- Composer
+- Node.js 18+ (consigliato Node 20 LTS)
+- NPM
+
+Se usi `nvm`, il progetto include `.nvmrc`.
+
+```bash
+nvm use
+```
 
 ## Avvio rapido
 
@@ -42,19 +58,25 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-4. (Opzionale) Installa dipendenze frontend:
+4. Installa dipendenze frontend:
 
 ```bash
 npm install
 ```
 
-5. Avvia il server Laravel:
+5. Avvia Vite (in un terminale separato):
+
+```bash
+npm run dev
+```
+
+6. Avvia il server Laravel:
 
 ```bash
 php artisan serve
 ```
 
-6. Apri nel browser:
+7. Apri nel browser:
 
 ```text
 http://127.0.0.1:8000
@@ -74,7 +96,8 @@ perche la logica usa sessione e array in memoria.
 - `app/Http/Controllers/SquadraController.php`: logica di estrazione e reset
 - `app/Services/SquadraExtractorService.php`: logica di business per estrazione/reset
 - `config/squadre.php`: elenco squadre configurabile
-- `resources/views/squadre.blade.php`: UI e chiamate AJAX
+- `resources/views/squadre.blade.php`: layout UI e stile pagina
+- `resources/js/squadre.js`: logica frontend (fetch AJAX + aggiornamento DOM)
 - `routes/web.php`: definizione rotte web
 - `tests/Feature/SquadraControllerTest.php`: test feature del flusso principale
 
@@ -96,15 +119,15 @@ sudo apt install php-mbstring
 ## Limiti attuali
 
 - Stato salvato solo in sessione (non condiviso tra utenti/dispositivi).
-- View con CSS/JS inline e dipendenza jQuery da CDN.
+- CSS ancora inline nella view (JS separato su asset Vite).
 - Mancano test unitari sul service e test end-to-end browser.
 
 ## Miglioramenti consigliati
 
 1. Spostare lo stato da sessione a persistenza su database se serve condivisione multiutente.
 2. Aggiungere test unitari dedicati a `SquadraExtractorService`.
-3. Migliorare UX: pulsanti disabilitati durante richiesta e gestione errori AJAX.
-4. Portare JS/CSS in asset Vite, rimuovendo script/style inline.
+3. Portare anche il CSS in asset Vite, rimuovendo gli stili inline dalla view.
+4. Introdurre persistenza preferenze UI (es. tema) in localStorage.
 5. Valutare endpoint API versionati (`/api/v1/...`) se il frontend cresce.
 
 ## Licenza
