@@ -72,8 +72,11 @@ perche la logica usa sessione e array in memoria.
 ## Struttura rilevante
 
 - `app/Http/Controllers/SquadraController.php`: logica di estrazione e reset
+- `app/Services/SquadraExtractorService.php`: logica di business per estrazione/reset
+- `config/squadre.php`: elenco squadre configurabile
 - `resources/views/squadre.blade.php`: UI e chiamate AJAX
 - `routes/web.php`: definizione rotte web
+- `tests/Feature/SquadraControllerTest.php`: test feature del flusso principale
 
 ## Esecuzione test
 
@@ -92,19 +95,17 @@ sudo apt install php-mbstring
 
 ## Limiti attuali
 
-- Lista squadre hardcoded nel controller.
 - Stato salvato solo in sessione (non condiviso tra utenti/dispositivi).
 - View con CSS/JS inline e dipendenza jQuery da CDN.
-- Copertura test minima (solo smoke test base).
+- Mancano test unitari sul service e test end-to-end browser.
 
 ## Miglioramenti consigliati
 
-1. Spostare la lista squadre in config o database.
-2. Estrarre la logica in un Service dedicato (es. `SquadraExtractorService`).
-3. Aggiungere test Feature per i casi principali (`/estrai`, ciclo completo, `/reset`).
-4. Migliorare UX: pulsanti disabilitati durante richiesta e gestione errori AJAX.
-5. Portare JS/CSS in asset Vite, rimuovendo script/style inline.
-6. Valutare endpoint API versionati (`/api/v1/...`) se il frontend cresce.
+1. Spostare lo stato da sessione a persistenza su database se serve condivisione multiutente.
+2. Aggiungere test unitari dedicati a `SquadraExtractorService`.
+3. Migliorare UX: pulsanti disabilitati durante richiesta e gestione errori AJAX.
+4. Portare JS/CSS in asset Vite, rimuovendo script/style inline.
+5. Valutare endpoint API versionati (`/api/v1/...`) se il frontend cresce.
 
 ## Licenza
 

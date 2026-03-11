@@ -4,26 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use App\Services\SquadraExtractorService;
 
 class SquadraController extends Controller
 {
-    private $squadre = [
-        'Beghe',
-        'Fusellami',
-        'Degrado sul divano',
-        'Maiafic',
-        'Dinamo',
-        'Tim Fucchio',
-        'Madenzi',
-        'L\'imane'
-    ];
+    public function __construct(private readonly SquadraExtractorService $extractor)
+    {
+    }
 
     public function index()
     {
-        $ultimaSquadraEstratta = Session::get('ultimaSquadraEstratta', 'Nessuna squadra estratta');
-        $squadreRestanti = Session::get('squadreRestanti', $this->squadre);
-        $numeroEstrazione = Session::get('numeroEstrazione', 0);
-        $cicliCompletati = Session::get('cicliCompletati', 0);
+        $initialState = $this->extractor->initialState();
+
+        $ultimaSquadraEstratta = Session::get('ultimaSquadraEstratta', $initialState['ultimaSquadraEstratta']);
+        $squadreRestanti = Session::get('squadreRestanti', $initialState['squadreRestanti']);
+        $numeroEstrazione = Session::get('numeroEstrazione', $initialState['numeroEstrazione']);
+        $cicliCompletati = Session::get('cicliCompletati', $initialState['cicliCompletati']);
 
         return view('squadre', [
             'squadra' => $ultimaSquadraEstratta,
@@ -35,45 +31,38 @@ class SquadraController extends Controller
 
     public function estrai()
     {
-        $squadreRestanti = Session::get('squadreRestanti', $this->squadre);
-        $numeroEstrazione = Session::get('numeroEstrazione', 0);
-        $cicliCompletati = Session::get('cicliCompletati', 0);
+        $initialState = $this->extractor->initialState();
 
-        if (empty($squadreRestanti)) {
-            $squadreRestanti = $this->squadre;
-            $cicliCompletati++;
-            $numeroEstrazione = 0;
-        }
+        $squadreRestanti = Session::get('squadreRestanti', $initialState['squadreRestanti']);
+        $numeroEstrazione = Session::get('numeroEstrazione', $initialState['numeroEstrazione']);
+        $cicliCompletati = Session::get('cicliCompletati', $initialState['cicliCompletati']);
 
-        $chiaveEstratta = array_rand($squadreRestanti);
-        $squadraEstratta = $squadreRestanti[$chiaveEstratta];
+        $result = $this->extractor->extract($squadreRestanti, $numeroEstrazione, $cicliCompletati);
 
-        unset($squadreRestanti[$chiaveEstratta]);
-
-        $numeroEstrazione++;
-
-        Session::put('ultimaSquadraEstratta', $squadraEstratta);
-        Session::put('numeroEstrazione', $numeroEstrazione);
-        Session::put('cicliCompletati', $cicliCompletati);
-        Session::put('squadreRestanti', $squadreRestanti);
+        Session::put('ultimaSquadraEstratta', $result['squadra']);
+        Session::put('numeroEstrazione', $result['numeroEstrazione']);
+        Session::put('cicliCompletati', $result['cicliCompletati']);
+        Session::put('squadreRestanti', $result['squadreRestanti']);
 
         return response()->json([
-            'squadra' => $squadraEstratta,
-            'numeroEstrazione' => $numeroEstrazione,
-            'cicliCompletati' => $cicliCompletati,
-            'squadreRestanti' => array_values($squadreRestanti)
+            'squadra' => $result['squadra'],
+            'numeroEstrazione' => $result['numeroEstrazione'],
+            'cicliCompletati' => $result['cicliCompletati'],
+            'squadreRestanti' => $result['squadreRestanti'],
         ]);
     }
 
     public function reset()
     {
-        Session::forget('ultimaSquadraEstratta');
-        Session::put('squadreRestanti', $this->squadre);
-        Session::forget('numeroEstrazione');
-        Session::forget('cicliCompletati');
+        $resetState = $this->extractor->resetState();
+
+        Session::put('ultimaSquadraEstratta', $resetState['ultimaSquadraEstratta']);
+        Session::put('squadreRestanti', $resetState['squadreRestanti']);
+        Session::put('numeroEstrazione', $resetState['numeroEstrazione']);
+        Session::put('cicliCompletati', $resetState['cicliCompletati']);
 
         return response()->json([
-            'squadreRestanti' => array_values($this->squadre)
+            'squadreRestanti' => $resetState['squadreRestanti'],
         ]);
     }
 }
