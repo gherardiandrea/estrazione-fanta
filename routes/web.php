@@ -22,4 +22,5 @@ Route::get('/', [TeamDrawController::class, 'index']);
 Route::post('/setup', [TeamDrawController::class, 'setup'])->name('setup');
 Route::post('/draw', [TeamDrawController::class, 'draw'])->name('draw');
 Route::post('/reset', [TeamDrawController::class, 'reset'])->name('reset');
+Route::post('/clear-history', [TeamDrawController::class, 'clearHistory'])->name('clear-history');
 Route::post('/new-configuration', [TeamDrawController::class, 'newConfiguration'])->name('new-configuration');
