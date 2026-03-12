@@ -25,15 +25,15 @@ completamento del ciclo.
 
 ## Stack
 
-- PHP 8.1+
-- Laravel 10
+- PHP 8.2+
+- Laravel 11
 - Blade
 - Vite + JavaScript vanilla
 - SQLite
 
 ## Requisiti
 
-- PHP 8.1+
+- PHP 8.2+
 - Composer
 - Node.js 18+ (consigliato Node 20 LTS)
 - npm
