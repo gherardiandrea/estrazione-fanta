@@ -382,6 +382,120 @@
             text-align: right;
         }
 
+        .history-panel {
+            margin-top: 18px;
+            border: 1px solid rgba(16, 33, 58, 0.2);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.72);
+            overflow: hidden;
+        }
+
+        .history-toggle {
+            width: 100%;
+            border: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: linear-gradient(90deg, #eef4fb, #f9f3e8);
+            color: #1f3654;
+            font-weight: 700;
+            box-shadow: none;
+        }
+
+        .history-toggle .chevron {
+            transition: transform 160ms ease;
+        }
+
+        .history-toggle[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
+        }
+
+        .history-content {
+            padding: 14px;
+            border-top: 1px solid rgba(16, 33, 58, 0.12);
+        }
+
+        .history-content[hidden] {
+            display: none;
+        }
+
+        .history-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .cycle-picker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2f4b69;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .cycle-picker select {
+            border: 1px solid rgba(16, 33, 58, 0.24);
+            border-radius: 10px;
+            padding: 8px 10px;
+            background: #fff;
+            color: #1f3654;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+        }
+
+        .history-danger-button {
+            background: linear-gradient(90deg, #b61e2d, #cf3341);
+            color: #fff;
+            box-shadow: 0 10px 18px rgba(182, 30, 45, 0.28);
+        }
+
+        dialog.history-dialog {
+            border: none;
+            border-radius: 16px;
+            width: min(460px, calc(100vw - 32px));
+            padding: 0;
+            background: #fff;
+            box-shadow: 0 26px 80px rgba(7, 16, 30, 0.5);
+        }
+
+        dialog.history-dialog::backdrop {
+            background: rgba(16, 33, 58, 0.55);
+        }
+
+        .history-dialog-content {
+            padding: 18px;
+        }
+
+        .history-dialog-content h3 {
+            margin: 0 0 10px;
+            color: #1f3654;
+            font-size: 1.12rem;
+        }
+
+        .history-dialog-content p {
+            margin: 0;
+            color: #3f5773;
+            line-height: 1.45;
+        }
+
+        .history-dialog-actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .dialog-cancel {
+            background: linear-gradient(90deg, #405a75, #516f8e);
+            color: #fff;
+            box-shadow: 0 10px 18px rgba(16, 33, 58, 0.2);
+        }
+
         @media (max-width: 740px) {
             .content {
                 padding: 18px;
@@ -411,6 +525,20 @@
 
             .history-meta {
                 text-align: left;
+            }
+
+            .history-toolbar {
+                align-items: stretch;
+            }
+
+            .cycle-picker {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .cycle-picker select,
+            .history-danger-button {
+                width: 100%;
             }
         }
 
@@ -451,7 +579,13 @@
         }
     </style>
 </head>
-<body data-draw-url="{{ route('draw') }}" data-reset-url="{{ route('reset') }}">
+<body
+    data-draw-url="{{ route('draw') }}"
+    data-reset-url="{{ route('reset') }}"
+    data-clear-history-url="{{ route('clear-history') }}"
+    data-history-by-cycle='@json($historyByCycle ?? [])'
+    data-history-cycles='@json($historyCycles ?? [])'
+    data-selected-history-cycle='{{ $selectedHistoryCycle ?? '' }}'>
     <main class="panel">
         <section class="content">
             <header class="hero">
@@ -529,20 +663,47 @@
                     @endforelse
                 </ul>
 
-                <h2 class="list-title">Storico ultime estrazioni</h2>
-                <ul id="draw-history" class="history-list">
-                    @forelse($drawHistory as $historyItem)
-                        <li>
-                            <span class="history-team">{{ $historyItem['team'] }}</span>
-                            <span class="history-meta">{{ $historyItem['drawNumber'] }}° estrazione · Cicli completati: {{ $historyItem['completedCycles'] }}</span>
-                        </li>
-                    @empty
-                        <li class="empty-state">Ancora nessuna estrazione registrata.</li>
-                    @endforelse
-                </ul>
+                <section class="history-panel">
+                    <button id="history-toggle" class="history-toggle" type="button" aria-expanded="false" aria-controls="history-content">
+                        <span>Storico estrazioni</span>
+                        <span class="chevron">▼</span>
+                    </button>
+
+                    <div id="history-content" class="history-content" hidden>
+                        <div class="history-toolbar">
+                            <label class="cycle-picker" for="history-cycle-select">
+                                <span>Ciclo da visualizzare</span>
+                                <select id="history-cycle-select"></select>
+                            </label>
+                            <button id="clear-history-button" class="history-danger-button" type="button">Cancella storico</button>
+                        </div>
+
+                        <ul id="draw-history" class="history-list">
+                            @forelse($drawHistory as $historyItem)
+                                <li>
+                                    <span class="history-team">{{ $historyItem['team'] }}</span>
+                                    <span class="history-meta">{{ $historyItem['drawNumber'] }}° estrazione</span>
+                                </li>
+                            @empty
+                                <li class="empty-state">Ancora nessuna estrazione registrata.</li>
+                            @endforelse
+                        </ul>
+                    </div>
+                </section>
             @endif
         </section>
     </main>
+
+    <dialog id="clear-history-dialog" class="history-dialog">
+        <div class="history-dialog-content">
+            <h3>Cancellare tutto lo storico?</h3>
+            <p>Questa operazione elimina tutte le estrazioni salvate. Non si puo annullare.</p>
+            <div class="history-dialog-actions">
+                <button id="cancel-clear-history" class="dialog-cancel" type="button">Annulla</button>
+                <button id="confirm-clear-history" class="history-danger-button" type="button">Cancella</button>
+            </div>
+        </div>
+    </dialog>
 
 </body>
 </html>

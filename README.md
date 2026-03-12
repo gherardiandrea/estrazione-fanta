@@ -17,7 +17,9 @@ completamento del ciclo.
 - Estrazione casuale di una squadra alla volta
 - Nessuna ripetizione fino a fine ciclo
 - Contatore estrazioni e cicli completati
-- Storico ultime estrazioni visibile nell'app (ultime 12)
+- Storico estrazioni collassabile (apri solo quando serve)
+- Selettore ciclo storico per visualizzare un ciclo completo
+- Cancellazione storico con conferma esplicita
 - Reset ciclo e nuova configurazione
 - UI responsive con feedback realtime (info/success/error)
 
