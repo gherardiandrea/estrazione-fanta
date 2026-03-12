@@ -2,17 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\TeamDraw\ClearConfigurationAction;
+use App\Actions\TeamDraw\DrawTeamAction;
+use App\Actions\TeamDraw\ResetTeamCycleAction;
+use App\Actions\TeamDraw\SetupConfigurationAction;
 use App\Models\ExtractionConfig;
 use App\Http\Requests\StoreTeamSetupRequest;
 use Illuminate\Support\Facades\Session;
-use App\Services\TeamDrawService;
-use Illuminate\Support\Str;
 
 class TeamDrawController extends Controller
 {
     private const CONFIG_TOKEN_KEY = 'extractionConfigToken';
 
-    public function __construct(private readonly TeamDrawService $extractor)
+    public function __construct(
+        private readonly SetupConfigurationAction $setupConfiguration,
+        private readonly DrawTeamAction $drawTeam,
+        private readonly ResetTeamCycleAction $resetTeamCycle,
+        private readonly ClearConfigurationAction $clearConfiguration,
+    )
     {
     }
 
@@ -47,25 +54,7 @@ class TeamDrawController extends Controller
 
     public function setup(StoreTeamSetupRequest $request)
     {
-        $teams = $request->teams();
-
-        $token = Session::get(self::CONFIG_TOKEN_KEY, (string) Str::uuid());
-        $resetState = $this->extractor->resetState($teams);
-        $config = ExtractionConfig::firstOrNew(['token' => $token]);
-
-        $config->fill([
-            'teams' => $teams,
-            'remaining_teams' => $resetState['remainingTeams'],
-            'last_team' => null,
-            'draw_number' => $resetState['drawNumber'],
-            'completed_cycles' => $resetState['completedCycles'],
-        ]);
-
-        $config->save();
-
-        $config->draws()->delete();
-
-        Session::put(self::CONFIG_TOKEN_KEY, $token);
+        $this->setupConfiguration->execute($request->teams());
 
         return redirect('/');
     }
@@ -80,33 +69,7 @@ class TeamDrawController extends Controller
             ], 422);
         }
 
-        $result = $this->extractor->extract(
-            $config->remaining_teams,
-            $config->draw_number,
-            $config->completed_cycles,
-            $config->teams
-        );
-
-        $config->update([
-            'last_team' => $result['team'],
-            'draw_number' => $result['drawNumber'],
-            'completed_cycles' => $result['completedCycles'],
-            'remaining_teams' => $result['remainingTeams'],
-        ]);
-
-        $config->draws()->create([
-            'team_name' => $result['team'],
-            'draw_number' => $result['drawNumber'],
-            'completed_cycles' => $result['completedCycles'],
-        ]);
-
-        return response()->json([
-            'team' => $result['team'],
-            'drawNumber' => $result['drawNumber'],
-            'completedCycles' => $result['completedCycles'],
-            'remainingTeams' => $result['remainingTeams'],
-            'drawHistory' => $config->recentDrawHistory(),
-        ]);
+        return response()->json($this->drawTeam->execute($config));
     }
 
     public function reset()
@@ -119,29 +82,12 @@ class TeamDrawController extends Controller
             ], 422);
         }
 
-        $resetState = $this->extractor->resetState($config->teams);
-
-        $config->update([
-            'last_team' => null,
-            'remaining_teams' => $resetState['remainingTeams'],
-            'draw_number' => $resetState['drawNumber'],
-            'completed_cycles' => $resetState['completedCycles'],
-        ]);
-
-        return response()->json([
-            'remainingTeams' => $resetState['remainingTeams'],
-            'drawHistory' => $config->recentDrawHistory(),
-        ]);
+        return response()->json($this->resetTeamCycle->execute($config));
     }
 
     public function newConfiguration()
     {
-        $config = $this->resolveConfig();
-        if ($config) {
-            $config->delete();
-        }
-
-        Session::forget(self::CONFIG_TOKEN_KEY);
+        $this->clearConfiguration->execute($this->resolveConfig());
 
         return redirect('/');
     }
