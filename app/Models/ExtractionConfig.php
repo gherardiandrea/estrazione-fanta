@@ -27,4 +27,18 @@ class ExtractionConfig extends Model
     {
         return $this->hasMany(ExtractionDraw::class, 'extraction_config_id');
     }
+
+    public function recentDrawHistory(int $limit = 12): array
+    {
+        return $this->draws()
+            ->latest('id')
+            ->limit($limit)
+            ->get(['team_name', 'draw_number', 'completed_cycles'])
+            ->map(static fn (ExtractionDraw $draw): array => [
+                'team' => $draw->team_name,
+                'drawNumber' => $draw->draw_number,
+                'completedCycles' => $draw->completed_cycles,
+            ])
+            ->all();
+    }
 }

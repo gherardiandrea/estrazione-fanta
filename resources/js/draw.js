@@ -38,6 +38,37 @@ function renderRemainingTeams(remainingTeams) {
     });
 }
 
+function renderDrawHistory(drawHistory) {
+    const list = document.getElementById('draw-history');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (!drawHistory.length) {
+        const empty = document.createElement('li');
+        empty.className = 'empty-state';
+        empty.textContent = 'Ancora nessuna estrazione registrata.';
+        list.appendChild(empty);
+        return;
+    }
+
+    drawHistory.forEach((entry) => {
+        const li = document.createElement('li');
+
+        const team = document.createElement('span');
+        team.className = 'history-team';
+        team.textContent = entry.team;
+
+        const meta = document.createElement('span');
+        meta.className = 'history-meta';
+        meta.textContent = `${entry.drawNumber}° estrazione - Cicli completati: ${entry.completedCycles}`;
+
+        li.appendChild(team);
+        li.appendChild(meta);
+        list.appendChild(li);
+    });
+}
+
 function csrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.getAttribute('content') : '';
@@ -106,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             renderRemainingTeams(data.remainingTeams || []);
+            renderDrawHistory(data.drawHistory || []);
             setFeedback('Estrazione completata con successo.', 'success');
         } catch (error) {
             setFeedback(error.message || "Errore durante l'estrazione. Riprova.", 'error');
@@ -126,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (completedCycles) completedCycles.textContent = 'Cicli completati: 0';
 
             renderRemainingTeams(data.remainingTeams || []);
+            renderDrawHistory(data.drawHistory || []);
             setFeedback('Reset completato.', 'success');
         } catch (error) {
             setFeedback(error.message || 'Errore durante il reset. Riprova.', 'error');

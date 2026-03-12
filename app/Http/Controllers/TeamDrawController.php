@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExtractionConfig;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTeamSetupRequest;
 use Illuminate\Support\Facades\Session;
 use App\Services\TeamDrawService;
 use Illuminate\Support\Str;
@@ -30,6 +30,7 @@ class TeamDrawController extends Controller
                 'drawNumber' => 0,
                 'completedCycles' => 0,
                 'remainingTeams' => [],
+                'drawHistory' => [],
             ]);
         }
 
@@ -38,27 +39,15 @@ class TeamDrawController extends Controller
             'drawNumber' => $config->draw_number,
             'completedCycles' => $config->completed_cycles,
             'remainingTeams' => $config->remaining_teams,
+            'drawHistory' => $config->recentDrawHistory(),
             'needsSetup' => false,
             'defaultTeams' => $defaultTeams,
         ]);
     }
 
-    public function setup(Request $request)
+    public function setup(StoreTeamSetupRequest $request)
     {
-        $validated = $request->validate([
-            'mode' => ['required', 'in:default,custom'],
-            'custom_teams' => ['nullable', 'string'],
-        ]);
-
-        $teams = $validated['mode'] === 'default'
-            ? config('teams.list', [])
-            : $this->parseCustomTeams((string) ($validated['custom_teams'] ?? ''));
-
-        if (count($teams) < 2) {
-            return back()
-                ->withErrors(['custom_teams' => 'Inserisci almeno 2 squadre valide.'])
-                ->withInput();
-        }
+        $teams = $request->teams();
 
         $token = Session::get(self::CONFIG_TOKEN_KEY, (string) Str::uuid());
         $resetState = $this->extractor->resetState($teams);
@@ -116,6 +105,7 @@ class TeamDrawController extends Controller
             'drawNumber' => $result['drawNumber'],
             'completedCycles' => $result['completedCycles'],
             'remainingTeams' => $result['remainingTeams'],
+            'drawHistory' => $config->recentDrawHistory(),
         ]);
     }
 
@@ -140,6 +130,7 @@ class TeamDrawController extends Controller
 
         return response()->json([
             'remainingTeams' => $resetState['remainingTeams'],
+            'drawHistory' => $config->recentDrawHistory(),
         ]);
     }
 
@@ -164,14 +155,5 @@ class TeamDrawController extends Controller
         }
 
         return ExtractionConfig::where('token', $token)->first();
-    }
-
-    private function parseCustomTeams(string $rawInput): array
-    {
-        $chunks = preg_split('/[\r\n,;]+/', $rawInput) ?: [];
-        $trimmed = array_map(static fn (string $item): string => trim($item), $chunks);
-        $filtered = array_filter($trimmed, static fn (string $item): bool => $item !== '');
-
-        return array_values(array_unique($filtered));
     }
 }

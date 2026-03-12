@@ -17,6 +17,7 @@ completamento del ciclo.
 - Estrazione casuale di una squadra alla volta
 - Nessuna ripetizione fino a fine ciclo
 - Contatore estrazioni e cicli completati
+- Storico ultime estrazioni visibile nell'app (ultime 12)
 - Reset ciclo e nuova configurazione
 - UI responsive con feedback realtime (info/success/error)
 
@@ -126,6 +127,7 @@ sudo apt install php-mbstring
 - Sessione: mantiene solo il token di collegamento al record DB
 - Stato persistito: teams, remaining_teams, last_team, draw_number, completed_cycles
 - Storico persistito: team estratto, numero estrazione, cicli completati al momento del draw
+- Storico mostrato in pagina: sezione "Storico ultime estrazioni"
 
 ## Privacy squadre predefinite
 

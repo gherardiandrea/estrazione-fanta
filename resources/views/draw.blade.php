@@ -357,6 +357,31 @@
             border: 1px dashed rgba(255, 255, 255, 0.3);
         }
 
+        .history-list {
+            grid-template-columns: 1fr;
+            margin-top: 8px;
+        }
+
+        .history-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            padding: 12px 14px;
+        }
+
+        .history-team {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .history-meta {
+            font-size: 0.86rem;
+            color: rgba(255, 255, 255, 0.82);
+            text-align: right;
+        }
+
         @media (max-width: 740px) {
             .content {
                 padding: 18px;
@@ -377,6 +402,15 @@
 
             .mode-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .history-list li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .history-meta {
+                text-align: left;
             }
         }
 
@@ -492,6 +526,18 @@
                         <li>{{ $team }}</li>
                     @empty
                         <li class="empty-state">Nessuna squadra rimanente: al prossimo click parte un nuovo ciclo.</li>
+                    @endforelse
+                </ul>
+
+                <h2 class="list-title">Storico ultime estrazioni</h2>
+                <ul id="draw-history" class="history-list">
+                    @forelse($drawHistory as $historyItem)
+                        <li>
+                            <span class="history-team">{{ $historyItem['team'] }}</span>
+                            <span class="history-meta">{{ $historyItem['drawNumber'] }}° estrazione · Cicli completati: {{ $historyItem['completedCycles'] }}</span>
+                        </li>
+                    @empty
+                        <li class="empty-state">Ancora nessuna estrazione registrata.</li>
                     @endforelse
                 </ul>
             @endif
