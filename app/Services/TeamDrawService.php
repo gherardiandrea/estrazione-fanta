@@ -18,7 +18,6 @@ class TeamDrawService
     {
         if (empty($remainingTeams)) {
             $remainingTeams = $baseTeams;
-            $completedCycles++;
             $drawNumber = 0;
         }
 
@@ -28,6 +27,11 @@ class TeamDrawService
         unset($remainingTeams[$drawnKey]);
 
         $drawNumber++;
+
+        // A cycle is completed exactly when the last available team is drawn.
+        if (empty($remainingTeams)) {
+            $completedCycles++;
+        }
 
         return [
             'team' => $drawnTeam,

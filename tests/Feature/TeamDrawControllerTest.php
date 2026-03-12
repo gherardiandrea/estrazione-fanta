@@ -92,13 +92,17 @@ class TeamDrawControllerTest extends TestCase
 
         $initialList = config('teams.list');
         $extracted = [];
+        $lastResponse = null;
 
         for ($i = 0; $i < count($initialList); $i++) {
             $response = $this->post('/draw')->assertOk();
             $extracted[] = $response->json('team');
+            $lastResponse = $response;
         }
 
         $this->assertCount(count($initialList), array_unique($extracted));
+        $this->assertNotNull($lastResponse);
+        $this->assertEquals(1, $lastResponse->json('completedCycles'));
 
         $nextCycleResponse = $this->post('/draw')->assertOk();
 
