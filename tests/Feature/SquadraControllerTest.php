@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ExtractionConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,16 +22,23 @@ class SquadraControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_setup_default_initializes_session(): void
+    public function test_setup_default_initializes_persisted_state(): void
     {
         $this->post('/setup', ['mode' => 'default'])->assertRedirect('/');
 
-        $this->assertEquals(config('squadre.list'), session('activeSquadre'));
-        $this->assertEquals(0, session('numeroEstrazione'));
-        $this->assertEquals(0, session('cicliCompletati'));
+        $token = session('extractionConfigToken');
+        $this->assertNotEmpty($token);
+
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertEquals(config('squadre.list'), $config->teams);
+        $this->assertEquals(config('squadre.list'), $config->remaining_teams);
+        $this->assertEquals(0, $config->draw_number);
+        $this->assertEquals(0, $config->completed_cycles);
     }
 
-    public function test_setup_custom_initializes_session(): void
+    public function test_setup_custom_initializes_persisted_state(): void
     {
         $custom = "Ajax\nMilan\nInter";
 
@@ -39,7 +47,12 @@ class SquadraControllerTest extends TestCase
             'custom_teams' => $custom,
         ])->assertRedirect('/');
 
-        $this->assertEquals(['Ajax', 'Milan', 'Inter'], session('activeSquadre'));
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertEquals(['Ajax', 'Milan', 'Inter'], $config->teams);
+        $this->assertEquals(['Ajax', 'Milan', 'Inter'], $config->remaining_teams);
     }
 
     public function test_estrai_requires_setup(): void
@@ -107,8 +120,13 @@ class SquadraControllerTest extends TestCase
                 'squadreRestanti' => config('squadre.list'),
             ]);
 
-        $this->assertEquals('Nessuna squadra estratta', session('ultimaSquadraEstratta'));
-        $this->assertEquals(0, session('numeroEstrazione'));
-        $this->assertEquals(0, session('cicliCompletati'));
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertNull($config->last_team);
+        $this->assertEquals(config('squadre.list'), $config->remaining_teams);
+        $this->assertEquals(0, $config->draw_number);
+        $this->assertEquals(0, $config->completed_cycles);
     }
 }
