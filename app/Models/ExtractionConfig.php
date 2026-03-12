@@ -41,4 +41,54 @@ class ExtractionConfig extends Model
             ])
             ->all();
     }
+
+    public function historyByCycle(): array
+    {
+        $draws = $this->draws()
+            ->orderBy('id')
+            ->get(['team_name', 'draw_number', 'completed_cycles']);
+
+        $historyByCycle = [];
+        $cycle = 0;
+
+        foreach ($draws as $index => $draw) {
+            if ($index === 0 || $draw->draw_number === 1) {
+                $cycle++;
+            }
+
+            $historyByCycle[$cycle][] = [
+                'team' => $draw->team_name,
+                'drawNumber' => $draw->draw_number,
+                'completedCycles' => $draw->completed_cycles,
+            ];
+        }
+
+        return $historyByCycle;
+    }
+
+    public function historyPayload(?int $selectedCycle = null): array
+    {
+        $historyByCycle = $this->historyByCycle();
+        $historyCycles = array_map('intval', array_keys($historyByCycle));
+
+        if (empty($historyCycles)) {
+            return [
+                'historyByCycle' => [],
+                'historyCycles' => [],
+                'selectedHistoryCycle' => null,
+                'drawHistory' => [],
+            ];
+        }
+
+        rsort($historyCycles);
+        $defaultCycle = $historyCycles[0];
+        $resolvedCycle = in_array($selectedCycle, $historyCycles, true) ? $selectedCycle : $defaultCycle;
+
+        return [
+            'historyByCycle' => $historyByCycle,
+            'historyCycles' => $historyCycles,
+            'selectedHistoryCycle' => $resolvedCycle,
+            'drawHistory' => $historyByCycle[$resolvedCycle] ?? [],
+        ];
+    }
 }

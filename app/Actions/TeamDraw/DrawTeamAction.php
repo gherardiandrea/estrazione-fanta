@@ -33,12 +33,11 @@ class DrawTeamAction
             'completed_cycles' => $result['completedCycles'],
         ]);
 
-        return [
+        return array_merge([
             'team' => $result['team'],
             'drawNumber' => $result['drawNumber'],
             'completedCycles' => $result['completedCycles'],
             'remainingTeams' => $result['remainingTeams'],
-            'drawHistory' => $config->recentDrawHistory(),
-        ];
+        ], $config->historyPayload());
     }
 }

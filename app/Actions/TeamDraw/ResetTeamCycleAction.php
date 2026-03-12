@@ -22,9 +22,8 @@ class ResetTeamCycleAction
             'completed_cycles' => $resetState['completedCycles'],
         ]);
 
-        return [
+        return array_merge([
             'remainingTeams' => $resetState['remainingTeams'],
-            'drawHistory' => $config->recentDrawHistory(),
-        ];
+        ], $config->historyPayload());
     }
 }
