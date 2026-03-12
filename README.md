@@ -129,7 +129,7 @@ sudo apt install php-mbstring
 - Sessione: mantiene solo il token di collegamento al record DB
 - Stato persistito: teams, remaining_teams, last_team, draw_number, completed_cycles
 - Storico persistito: team estratto, numero estrazione, cicli completati al momento del draw
-- Storico mostrato in pagina: sezione "Storico ultime estrazioni"
+- Storico mostrato in pagina: pannello "Storico estrazioni" (collassabile), con selettore ciclo
 
 ## Privacy squadre predefinite
 
@@ -143,6 +143,7 @@ sudo apt install php-mbstring
 - `POST /setup`
 - `POST /draw`
 - `POST /reset`
+- `POST /clear-history`
 - `POST /new-configuration`
 
 ## Credibilita repository
@@ -163,6 +164,7 @@ Il progetto include:
 ## Known issues
 
 - SQLite su path WSL condivisi con tool Windows puo dare `SQLITE_BUSY`.
+- In cloud evitare path SQLite locali: usare database persistente (MySQL/PostgreSQL).
 - Parte CSS ancora inline in Blade (JS gia separato in asset Vite).
 
 ## Roadmap breve
