@@ -2,48 +2,48 @@
 
 namespace App\Services;
 
-class SquadraExtractorService
+class TeamDrawService
 {
-    public function initialState(array $squadre): array
+    public function initialState(array $teams): array
     {
         return [
-            'ultimaSquadraEstratta' => 'Nessuna squadra estratta',
-            'numeroEstrazione' => 0,
-            'cicliCompletati' => 0,
-            'squadreRestanti' => $squadre,
+            'lastDrawnTeam' => 'Nessuna squadra estratta',
+            'drawNumber' => 0,
+            'completedCycles' => 0,
+            'remainingTeams' => $teams,
         ];
     }
 
-    public function extract(array $squadreRestanti, int $numeroEstrazione, int $cicliCompletati, array $squadreBase): array
+    public function extract(array $remainingTeams, int $drawNumber, int $completedCycles, array $baseTeams): array
     {
-        if (empty($squadreRestanti)) {
-            $squadreRestanti = $squadreBase;
-            $cicliCompletati++;
-            $numeroEstrazione = 0;
+        if (empty($remainingTeams)) {
+            $remainingTeams = $baseTeams;
+            $completedCycles++;
+            $drawNumber = 0;
         }
 
-        $chiaveEstratta = array_rand($squadreRestanti);
-        $squadraEstratta = $squadreRestanti[$chiaveEstratta];
+        $drawnKey = array_rand($remainingTeams);
+        $drawnTeam = $remainingTeams[$drawnKey];
 
-        unset($squadreRestanti[$chiaveEstratta]);
+        unset($remainingTeams[$drawnKey]);
 
-        $numeroEstrazione++;
+        $drawNumber++;
 
         return [
-            'squadra' => $squadraEstratta,
-            'numeroEstrazione' => $numeroEstrazione,
-            'cicliCompletati' => $cicliCompletati,
-            'squadreRestanti' => array_values($squadreRestanti),
+            'team' => $drawnTeam,
+            'drawNumber' => $drawNumber,
+            'completedCycles' => $completedCycles,
+            'remainingTeams' => array_values($remainingTeams),
         ];
     }
 
-    public function resetState(array $squadre): array
+    public function resetState(array $teams): array
     {
         return [
-            'ultimaSquadraEstratta' => 'Nessuna squadra estratta',
-            'numeroEstrazione' => 0,
-            'cicliCompletati' => 0,
-            'squadreRestanti' => $squadre,
+            'lastDrawnTeam' => 'Nessuna squadra estratta',
+            'drawNumber' => 0,
+            'completedCycles' => 0,
+            'remainingTeams' => $teams,
         ];
     }
 }

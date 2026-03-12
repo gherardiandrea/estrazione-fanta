@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-    @vite('resources/js/squadre.js')
+    @vite('resources/js/draw.js')
     <style>
         :root {
             --bg-deep: #0b1f3a;
@@ -231,13 +231,13 @@
             user-select: none;
         }
 
-        #numero-estrazione {
+        #draw-number {
             margin: 0;
             color: #4f6078;
             font-size: 1rem;
         }
 
-        #squadra-estratta {
+        #drawn-team {
             display: block;
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(2rem, 5vw, 3.8rem);
@@ -248,7 +248,7 @@
             text-wrap: balance;
         }
 
-        #cicli-completati {
+        #completed-cycles {
             margin: 0;
             font-weight: 700;
             color: #294764;
@@ -417,7 +417,7 @@
         }
     </style>
 </head>
-<body data-estrai-url="{{ route('estrai') }}" data-reset-url="{{ route('reset') }}">
+<body data-draw-url="{{ route('draw') }}" data-reset-url="{{ route('reset') }}">
     <main class="panel">
         <section class="content">
             <header class="hero">
@@ -438,7 +438,7 @@
                             <label class="mode-option">
                                 <input type="radio" name="mode" value="default" {{ old('mode', 'default') === 'default' ? 'checked' : '' }}>
                                 Usa squadre predefinite
-                                <small>{{ count($defaultSquadre) }} squadre pronte all'uso.</small>
+                                <small>{{ count($defaultTeams) }} squadre pronte all'uso.</small>
                             </label>
 
                             <label class="mode-option">
@@ -467,18 +467,18 @@
                 </section>
             @else
                 <section class="draw-card">
-                    <p id="numero-estrazione">{{ $numeroEstrazione > 0 ? $numeroEstrazione . '° squadra estratta' : '' }}</p>
-                    <strong id="squadra-estratta">{{ $squadra }}</strong>
+                    <p id="draw-number">{{ $drawNumber > 0 ? $drawNumber . '° squadra estratta' : '' }}</p>
+                    <strong id="drawn-team">{{ $lastDrawnTeam }}</strong>
                     <div class="meta-line">
-                        <p id="cicli-completati">Cicli completati: {{ $cicliCompletati }}</p>
+                        <p id="completed-cycles">Cicli completati: {{ $completedCycles }}</p>
                         <span class="help-pill" title="Un ciclo e completo quando vengono estratte tutte le squadre una volta.">?</span>
                     </div>
                 </section>
 
                 <div class="actions">
-                    <button class="primary-button" id="estrai-squadra">Estrai squadra</button>
-                    <button class="reset-button" id="reset-squadre">Resetta ciclo</button>
-                    <form class="reconfigure-form" method="POST" action="{{ route('nuova-configurazione') }}">
+                    <button class="primary-button" id="draw-team-button">Estrai squadra</button>
+                    <button class="reset-button" id="reset-cycle-button">Resetta ciclo</button>
+                    <form class="reconfigure-form" method="POST" action="{{ route('new-configuration') }}">
                         @csrf
                         <button class="button-secondary" type="submit">Nuova configurazione</button>
                     </form>
@@ -487,9 +487,9 @@
                 <p id="feedback" class="info"></p>
 
                 <h2 class="list-title">Squadre restanti</h2>
-                <ul id="squadre-restanti">
-                    @forelse($squadreRestanti as $s)
-                        <li>{{ $s }}</li>
+                <ul id="remaining-teams">
+                    @forelse($remainingTeams as $team)
+                        <li>{{ $team }}</li>
                     @empty
                         <li class="empty-state">Nessuna squadra rimanente: al prossimo click parte un nuovo ciclo.</li>
                     @endforelse

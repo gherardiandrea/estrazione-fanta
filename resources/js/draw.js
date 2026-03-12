@@ -1,10 +1,10 @@
 import './bootstrap';
 
 function setButtonsDisabled(disabled) {
-    const estraiButton = document.getElementById('estrai-squadra');
-    const resetButton = document.getElementById('reset-squadre');
+    const drawButton = document.getElementById('draw-team-button');
+    const resetButton = document.getElementById('reset-cycle-button');
 
-    if (estraiButton) estraiButton.disabled = disabled;
+    if (drawButton) drawButton.disabled = disabled;
     if (resetButton) resetButton.disabled = disabled;
 }
 
@@ -17,13 +17,13 @@ function setFeedback(message, type) {
     feedback.textContent = message;
 }
 
-function renderSquadreRestanti(squadreRestanti) {
-    const list = document.getElementById('squadre-restanti');
+function renderRemainingTeams(remainingTeams) {
+    const list = document.getElementById('remaining-teams');
     if (!list) return;
 
     list.innerHTML = '';
 
-    if (!squadreRestanti.length) {
+    if (!remainingTeams.length) {
         const empty = document.createElement('li');
         empty.className = 'empty-state';
         empty.textContent = 'Nessuna squadra rimanente: al prossimo click parte un nuovo ciclo.';
@@ -31,9 +31,9 @@ function renderSquadreRestanti(squadreRestanti) {
         return;
     }
 
-    squadreRestanti.forEach((squadra) => {
+    remainingTeams.forEach((team) => {
         const li = document.createElement('li');
-        li.textContent = squadra;
+        li.textContent = team;
         list.appendChild(li);
     });
 }
@@ -75,37 +75,37 @@ async function postJson(url) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const body = document.body;
-    const estraiUrl = body.dataset.estraiUrl;
+    const drawUrl = body.dataset.drawUrl;
     const resetUrl = body.dataset.resetUrl;
 
-    const estraiButton = document.getElementById('estrai-squadra');
-    const resetButton = document.getElementById('reset-squadre');
-    const squadraEstratta = document.getElementById('squadra-estratta');
-    const numeroEstrazione = document.getElementById('numero-estrazione');
-    const cicliCompletati = document.getElementById('cicli-completati');
+    const drawButton = document.getElementById('draw-team-button');
+    const resetButton = document.getElementById('reset-cycle-button');
+    const drawnTeam = document.getElementById('drawn-team');
+    const drawNumber = document.getElementById('draw-number');
+    const completedCycles = document.getElementById('completed-cycles');
 
-    if (!estraiButton || !resetButton || !estraiUrl || !resetUrl) {
+    if (!drawButton || !resetButton || !drawUrl || !resetUrl) {
         return;
     }
 
-    estraiButton.addEventListener('click', async () => {
+    drawButton.addEventListener('click', async () => {
         try {
             setButtonsDisabled(true);
             setFeedback('Estrazione in corso...', 'info');
 
-            const data = await postJson(estraiUrl);
+            const data = await postJson(drawUrl);
 
-            if (squadraEstratta) squadraEstratta.textContent = data.squadra;
-            if (numeroEstrazione) {
-                numeroEstrazione.textContent = data.numeroEstrazione > 0
-                    ? `${data.numeroEstrazione}° squadra estratta`
+            if (drawnTeam) drawnTeam.textContent = data.team;
+            if (drawNumber) {
+                drawNumber.textContent = data.drawNumber > 0
+                    ? `${data.drawNumber}° squadra estratta`
                     : '';
             }
-            if (cicliCompletati) {
-                cicliCompletati.textContent = `Cicli completati: ${data.cicliCompletati}`;
+            if (completedCycles) {
+                completedCycles.textContent = `Cicli completati: ${data.completedCycles}`;
             }
 
-            renderSquadreRestanti(data.squadreRestanti || []);
+            renderRemainingTeams(data.remainingTeams || []);
             setFeedback('Estrazione completata con successo.', 'success');
         } catch (error) {
             setFeedback(error.message || "Errore durante l'estrazione. Riprova.", 'error');
@@ -121,11 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await postJson(resetUrl);
 
-            if (squadraEstratta) squadraEstratta.textContent = 'Nessuna squadra estratta';
-            if (numeroEstrazione) numeroEstrazione.textContent = '';
-            if (cicliCompletati) cicliCompletati.textContent = 'Cicli completati: 0';
+            if (drawnTeam) drawnTeam.textContent = 'Nessuna squadra estratta';
+            if (drawNumber) drawNumber.textContent = '';
+            if (completedCycles) completedCycles.textContent = 'Cicli completati: 0';
 
-            renderSquadreRestanti(data.squadreRestanti || []);
+            renderRemainingTeams(data.remainingTeams || []);
             setFeedback('Reset completato.', 'success');
         } catch (error) {
             setFeedback(error.message || 'Errore durante il reset. Riprova.', 'error');

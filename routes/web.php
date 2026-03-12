@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SquadraController;
+use App\Http\Controllers\TeamDrawController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,8 +18,8 @@ Route::get('/welcome', function () {
     return view('welcome');
 });
 
-Route::get('/', [SquadraController::class, 'index']);
-Route::post('/setup', [SquadraController::class, 'setup'])->name('setup');
-Route::post('/estrai', [SquadraController::class, 'estrai'])->name('estrai');
-Route::post('/reset', [SquadraController::class, 'reset'])->name('reset');
-Route::post('/nuova-configurazione', [SquadraController::class, 'nuovaConfigurazione'])->name('nuova-configurazione');
+Route::get('/', [TeamDrawController::class, 'index']);
+Route::post('/setup', [TeamDrawController::class, 'setup'])->name('setup');
+Route::post('/draw', [TeamDrawController::class, 'draw'])->name('draw');
+Route::post('/reset', [TeamDrawController::class, 'reset'])->name('reset');
+Route::post('/new-configuration', [TeamDrawController::class, 'newConfiguration'])->name('new-configuration');

@@ -6,11 +6,11 @@ use App\Models\ExtractionConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class SquadraControllerTest extends TestCase
+class TeamDrawControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function setupDefaultSquadre(): void
+    private function setupDefaultTeams(): void
     {
         $this->post('/setup', ['mode' => 'default'])->assertRedirect('/');
     }
@@ -32,8 +32,8 @@ class SquadraControllerTest extends TestCase
         $config = ExtractionConfig::where('token', $token)->first();
 
         $this->assertNotNull($config);
-        $this->assertEquals(config('squadre.list'), $config->teams);
-        $this->assertEquals(config('squadre.list'), $config->remaining_teams);
+        $this->assertEquals(config('teams.list'), $config->teams);
+        $this->assertEquals(config('teams.list'), $config->remaining_teams);
         $this->assertEquals(0, $config->draw_number);
         $this->assertEquals(0, $config->completed_cycles);
     }
@@ -55,69 +55,69 @@ class SquadraControllerTest extends TestCase
         $this->assertEquals(['Ajax', 'Milan', 'Inter'], $config->remaining_teams);
     }
 
-    public function test_estrai_requires_setup(): void
+    public function test_draw_requires_setup(): void
     {
-        $this->post('/estrai')
+        $this->post('/draw')
             ->assertStatus(422)
             ->assertJson([
                 'message' => "Configura prima l'elenco squadre.",
             ]);
     }
 
-    public function test_estrai_returns_expected_payload(): void
+    public function test_draw_returns_expected_payload(): void
     {
-        $this->setupDefaultSquadre();
+        $this->setupDefaultTeams();
 
-        $response = $this->post('/estrai');
+        $response = $this->post('/draw');
 
         $response
             ->assertOk()
             ->assertJsonStructure([
-                'squadra',
-                'numeroEstrazione',
-                'cicliCompletati',
-                'squadreRestanti',
+                'team',
+                'drawNumber',
+                'completedCycles',
+                'remainingTeams',
             ]);
 
         $data = $response->json();
 
-        $this->assertEquals(1, $data['numeroEstrazione']);
-        $this->assertEquals(0, $data['cicliCompletati']);
-        $this->assertCount(count(config('squadre.list')) - 1, $data['squadreRestanti']);
+        $this->assertEquals(1, $data['drawNumber']);
+        $this->assertEquals(0, $data['completedCycles']);
+        $this->assertCount(count(config('teams.list')) - 1, $data['remainingTeams']);
     }
 
     public function test_no_duplicate_extractions_in_single_cycle(): void
     {
-        $this->setupDefaultSquadre();
+        $this->setupDefaultTeams();
 
-        $initialList = config('squadre.list');
+        $initialList = config('teams.list');
         $extracted = [];
 
         for ($i = 0; $i < count($initialList); $i++) {
-            $response = $this->post('/estrai')->assertOk();
-            $extracted[] = $response->json('squadra');
+            $response = $this->post('/draw')->assertOk();
+            $extracted[] = $response->json('team');
         }
 
         $this->assertCount(count($initialList), array_unique($extracted));
 
-        $nextCycleResponse = $this->post('/estrai')->assertOk();
+        $nextCycleResponse = $this->post('/draw')->assertOk();
 
-        $this->assertEquals(1, $nextCycleResponse->json('numeroEstrazione'));
-        $this->assertEquals(1, $nextCycleResponse->json('cicliCompletati'));
+        $this->assertEquals(1, $nextCycleResponse->json('drawNumber'));
+        $this->assertEquals(1, $nextCycleResponse->json('completedCycles'));
     }
 
     public function test_reset_restores_initial_state(): void
     {
-        $this->setupDefaultSquadre();
+        $this->setupDefaultTeams();
 
-        $this->post('/estrai')->assertOk();
+        $this->post('/draw')->assertOk();
 
         $response = $this->post('/reset');
 
         $response
             ->assertOk()
             ->assertJson([
-                'squadreRestanti' => config('squadre.list'),
+                'remainingTeams' => config('teams.list'),
             ]);
 
         $token = session('extractionConfigToken');
@@ -125,8 +125,84 @@ class SquadraControllerTest extends TestCase
 
         $this->assertNotNull($config);
         $this->assertNull($config->last_team);
-        $this->assertEquals(config('squadre.list'), $config->remaining_teams);
+        $this->assertEquals(config('teams.list'), $config->remaining_teams);
         $this->assertEquals(0, $config->draw_number);
         $this->assertEquals(0, $config->completed_cycles);
+    }
+
+    public function test_setup_custom_parses_trims_and_deduplicates_teams(): void
+    {
+        $custom = "  Ajax , Milan;\nInter\nMilan  ";
+
+        $this->post('/setup', [
+            'mode' => 'custom',
+            'custom_teams' => $custom,
+        ])->assertRedirect('/');
+
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertEquals(['Ajax', 'Milan', 'Inter'], $config->teams);
+    }
+
+    public function test_setup_custom_with_less_than_two_teams_fails_validation(): void
+    {
+        $response = $this->from('/')->post('/setup', [
+            'mode' => 'custom',
+            'custom_teams' => 'SoloTeam',
+        ]);
+
+        $response->assertRedirect('/');
+        $response->assertSessionHasErrors('custom_teams');
+
+        $this->assertDatabaseCount('extraction_configs', 0);
+    }
+
+    public function test_new_configuration_deletes_config_and_token(): void
+    {
+        $this->setupDefaultTeams();
+
+        $token = session('extractionConfigToken');
+        $this->assertNotEmpty($token);
+        $this->assertDatabaseHas('extraction_configs', ['token' => $token]);
+
+        $this->post('/new-configuration')->assertRedirect('/');
+
+        $this->assertDatabaseCount('extraction_configs', 0);
+        $this->assertNull(session('extractionConfigToken'));
+    }
+
+    public function test_draw_persists_state_across_requests(): void
+    {
+        $this->setupDefaultTeams();
+
+        $this->post('/draw')->assertOk();
+        $this->post('/draw')->assertOk();
+
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertEquals(2, $config->draw_number);
+        $this->assertCount(count(config('teams.list')) - 2, $config->remaining_teams);
+    }
+
+    public function test_reset_restores_custom_team_set(): void
+    {
+        $custom = "Ajax\nMilan\nInter";
+
+        $this->post('/setup', [
+            'mode' => 'custom',
+            'custom_teams' => $custom,
+        ])->assertRedirect('/');
+
+        $this->post('/draw')->assertOk();
+
+        $response = $this->post('/reset')->assertOk();
+
+        $response->assertJson([
+            'remainingTeams' => ['Ajax', 'Milan', 'Inter'],
+        ]);
     }
 }

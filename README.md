@@ -134,9 +134,9 @@ sudo apt install php-mbstring
 
 - `GET /`
 - `POST /setup`
-- `POST /estrai`
+- `POST /draw`
 - `POST /reset`
-- `POST /nuova-configurazione`
+- `POST /new-configuration`
 
 ## Credibilita repository
 
@@ -160,7 +160,7 @@ Il progetto include:
 ## Roadmap breve
 
 1. Storico completo estrazioni/configurazioni
-2. Test unitari su `SquadraExtractorService`
+2. Test unitari su `TeamDrawService`
 3. Estrazione CSS in asset Vite
 4. Preferenze UI persistite (tema)
 
