@@ -63,7 +63,7 @@ function renderDrawHistory(drawHistory) {
 
         const meta = document.createElement('span');
         meta.className = 'history-meta';
-        meta.textContent = `${entry.drawNumber}° estrazione - Cicli completati: ${entry.completedCycles}`;
+        meta.textContent = `${entry.drawNumber}° estrazione`;
 
         li.appendChild(team);
         li.appendChild(meta);
@@ -293,7 +293,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (drawnTeam) drawnTeam.textContent = 'Nessuna squadra estratta';
             if (drawNumber) drawNumber.textContent = '';
-            if (completedCycles) completedCycles.textContent = 'Cicli completati: 0';
+            if (completedCycles) {
+                const safeCompletedCycles = Number.isInteger(data.completedCycles)
+                    ? data.completedCycles
+                    : 0;
+                completedCycles.textContent = `Cicli completati: ${safeCompletedCycles}`;
+            }
 
             renderRemainingTeams(data.remainingTeams || []);
             applyHistoryPayload(data);
