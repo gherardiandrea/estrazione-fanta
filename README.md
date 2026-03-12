@@ -158,6 +158,7 @@ Il progetto include:
 	- `SECURITY.md`
 	- `CODE_OF_CONDUCT.md`
 - Changelog (`CHANGELOG.md`)
+- Checklist deploy Laravel Cloud (`docs/laravel-cloud-checklist.md`)
 
 ## Known issues
 
