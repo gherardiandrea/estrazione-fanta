@@ -212,6 +212,44 @@ class TeamDrawControllerTest extends TestCase
         ]);
     }
 
+    public function test_reset_keeps_completed_cycles_and_removes_partial_current_cycle_history(): void
+    {
+        $this->setupDefaultTeams();
+
+        $teamsCount = count(config('teams.list'));
+
+        for ($i = 0; $i < $teamsCount; $i++) {
+            $this->post('/draw')->assertOk();
+        }
+
+        $this->assertDatabaseCount('extraction_draws', $teamsCount);
+
+        $this->post('/draw')->assertOk();
+        $this->assertDatabaseCount('extraction_draws', $teamsCount + 1);
+
+        $response = $this->post('/reset')->assertOk();
+
+        $response->assertJson([
+            'remainingTeams' => config('teams.list'),
+            'completedCycles' => 1,
+        ]);
+
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertEquals(0, $config->draw_number);
+        $this->assertEquals(1, $config->completed_cycles);
+        $this->assertEquals(config('teams.list'), $config->remaining_teams);
+
+        $this->assertDatabaseCount('extraction_draws', $teamsCount);
+        $this->assertDatabaseMissing('extraction_draws', [
+            'extraction_config_id' => $config->id,
+            'draw_number' => 1,
+            'completed_cycles' => 1,
+        ]);
+    }
+
     public function test_each_draw_is_saved_in_history_with_current_state(): void
     {
         $this->setupDefaultTeams();
@@ -248,6 +286,35 @@ class TeamDrawControllerTest extends TestCase
 
         $this->post('/new-configuration')->assertRedirect('/');
 
+        $this->assertDatabaseCount('extraction_draws', 0);
+    }
+
+    public function test_clear_history_empties_history_and_resets_completed_cycles_counter(): void
+    {
+        $this->setupDefaultTeams();
+
+        $teamsCount = count(config('teams.list'));
+
+        for ($i = 0; $i < $teamsCount; $i++) {
+            $this->post('/draw')->assertOk();
+        }
+
+        $this->assertDatabaseCount('extraction_draws', $teamsCount);
+
+        $response = $this->post('/clear-history')->assertOk();
+
+        $response->assertJson([
+            'completedCycles' => 0,
+            'historyCycles' => [],
+            'drawHistory' => [],
+            'selectedHistoryCycle' => null,
+        ]);
+
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+        $this->assertEquals(0, $config->completed_cycles);
         $this->assertDatabaseCount('extraction_draws', 0);
     }
 }

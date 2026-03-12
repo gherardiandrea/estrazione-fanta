@@ -198,6 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const applyHistoryPayload = (data) => {
+        if (completedCycles && Number.isInteger(data.completedCycles)) {
+            completedCycles.textContent = `Cicli completati: ${data.completedCycles}`;
+        }
+
         if (data.historyByCycle && Array.isArray(data.historyCycles)) {
             historyByCycle = data.historyByCycle;
             historyCycles = data.historyCycles
