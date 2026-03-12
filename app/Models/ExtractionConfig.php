@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExtractionConfig extends Model
 {
@@ -21,4 +22,9 @@ class ExtractionConfig extends Model
         'draw_number' => 'integer',
         'completed_cycles' => 'integer',
     ];
+
+    public function draws(): HasMany
+    {
+        return $this->hasMany(ExtractionDraw::class, 'extraction_config_id');
+    }
 }

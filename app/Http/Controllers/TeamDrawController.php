@@ -74,6 +74,8 @@ class TeamDrawController extends Controller
 
         $config->save();
 
+        $config->draws()->delete();
+
         Session::put(self::CONFIG_TOKEN_KEY, $token);
 
         return redirect('/');
@@ -101,6 +103,12 @@ class TeamDrawController extends Controller
             'draw_number' => $result['drawNumber'],
             'completed_cycles' => $result['completedCycles'],
             'remaining_teams' => $result['remainingTeams'],
+        ]);
+
+        $config->draws()->create([
+            'team_name' => $result['team'],
+            'draw_number' => $result['drawNumber'],
+            'completed_cycles' => $result['completedCycles'],
         ]);
 
         return response()->json([

@@ -120,9 +120,12 @@ sudo apt install php-mbstring
 ## Persistenza nel progetto
 
 - Tabella: `extraction_configs`
+- Tabella storico: `extraction_draws`
 - Modello: `app/Models/ExtractionConfig.php`
+- Modello storico: `app/Models/ExtractionDraw.php`
 - Sessione: mantiene solo il token di collegamento al record DB
 - Stato persistito: teams, remaining_teams, last_team, draw_number, completed_cycles
+- Storico persistito: team estratto, numero estrazione, cicli completati al momento del draw
 
 ## Privacy squadre predefinite
 
@@ -159,10 +162,9 @@ Il progetto include:
 
 ## Roadmap breve
 
-1. Storico completo estrazioni/configurazioni
-2. Test unitari su `TeamDrawService`
-3. Estrazione CSS in asset Vite
-4. Preferenze UI persistite (tema)
+1. Storico completo configurazioni (oltre allo storico estrazioni)
+2. Estrazione CSS in asset Vite
+3. Preferenze UI persistite (tema)
 
 ## Security
 

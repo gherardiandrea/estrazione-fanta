@@ -190,6 +190,8 @@ class TeamDrawControllerTest extends TestCase
         $this->assertNotNull($config);
         $this->assertEquals(2, $config->draw_number);
         $this->assertCount(count(config('teams.list')) - 2, $config->remaining_teams);
+
+        $this->assertDatabaseCount('extraction_draws', 2);
     }
 
     public function test_reset_restores_custom_team_set(): void
@@ -208,5 +210,44 @@ class TeamDrawControllerTest extends TestCase
         $response->assertJson([
             'remainingTeams' => ['Ajax', 'Milan', 'Inter'],
         ]);
+    }
+
+    public function test_each_draw_is_saved_in_history_with_current_state(): void
+    {
+        $this->setupDefaultTeams();
+
+        $first = $this->post('/draw')->assertOk()->json();
+        $second = $this->post('/draw')->assertOk()->json();
+
+        $token = session('extractionConfigToken');
+        $config = ExtractionConfig::where('token', $token)->first();
+
+        $this->assertNotNull($config);
+
+        $this->assertDatabaseHas('extraction_draws', [
+            'extraction_config_id' => $config->id,
+            'team_name' => $first['team'],
+            'draw_number' => $first['drawNumber'],
+            'completed_cycles' => $first['completedCycles'],
+        ]);
+
+        $this->assertDatabaseHas('extraction_draws', [
+            'extraction_config_id' => $config->id,
+            'team_name' => $second['team'],
+            'draw_number' => $second['drawNumber'],
+            'completed_cycles' => $second['completedCycles'],
+        ]);
+    }
+
+    public function test_new_configuration_deletes_history_with_config(): void
+    {
+        $this->setupDefaultTeams();
+        $this->post('/draw')->assertOk();
+
+        $this->assertDatabaseCount('extraction_draws', 1);
+
+        $this->post('/new-configuration')->assertRedirect('/');
+
+        $this->assertDatabaseCount('extraction_draws', 0);
     }
 }
